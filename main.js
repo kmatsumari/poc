@@ -2,7 +2,7 @@ var fs = require('fs')
 const Discord = require("discord.js");
 const client  = new Discord.Client();
 
-const BOT_VERSION = "1.0.0";
+const BOT_VERSION = "1.0.1";
 
 // Here you find the prefix for all commands.
 // For example: When it is set to "!" then you can execute commands with "!" like "!help"
@@ -307,6 +307,7 @@ function check_tank(message) {
     fs.readFile('c:/t/tankees.json', function (err, data) {
         var json = JSON.parse(data)
         var nobody = true;
+        var concat = ""; // add concat var
         for (n=0;n<json.length; n++) {
             var obj = json[n];
             if (obj.archive) {
@@ -318,20 +319,27 @@ function check_tank(message) {
             var diffhours = parseInt((now - dateTanked) / (1000 * 60 * 60)); 
             var diffmins = parseInt((now - dateTanked) / (1000 * 60));
             diffmins = diffmins - (diffhours * 60)
-            msg = "(tanked " + diffhours + " hours and " + diffmins  + " minutes ago by " + obj.tanked_by + " for " + obj.reason + ")";
+            msg = "(tanked " + diffhours + " hours and " + diffmins  + " minutes ago by " + obj.tanked_by.username + " for " + obj.reason + ")";
             if (ts > obj.time_to_untank) {
-                message.channel.send(obj.user_tanked + " has served their time. " + msg);
-                console.log(obj.user_tanked + " has served their time. " + msg);
+                msg += obj.user_tanked + " has served their time. " + msg; //message.channel.send(obj.user_tanked + " has served their time. " + msg); // Don't send it yet
             }
             else {
-                message.channel.send(obj.user_tanked + " still has time to wait. " + msg);
-                console.log(obj.user_tanked + " has served their time. " + msg);
+                msg += obj.user_tanked + " still has time to wait. " + msg; //message.channel.send(obj.user_tanked + " still has time to wait. " + msg); // Don't send it yet
+            }
+            // Concatentate the message in temp, check length, decide on output with reset to concat with current msg || concat/continue.
+            let t_concat = concat + '\r\n' + msg;
+            if (t_concat.length <= 2000) {
+              concat = t_concat;
+            } else {
+              message.channel.send(concat);
+              concat = msg;
             }
         }
         if (nobody) {
             message.channel.send("According to my records, the drunk tank is empty!");
-        }
-
+        } else {
+		    message.channel.send(concat); // explicit final send of last unsent concat series (or if all were < 2000 in length).
+		}
     });
 }
 
